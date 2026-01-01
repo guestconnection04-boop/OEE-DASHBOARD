@@ -1,7 +1,3 @@
-PlannedTime,Downtime,IdealCycleTime,TotalCount,GoodCount
-480,60,0.5,800,760
-,,,,
-,,,,
-,,,,
-,,,,
-,,,,
+Conveyor,PlannedTime,Downtime,IdealCycleTime,TotalCount,GoodCount
+C1,480,30,0.5,900,880
+C2,480,50,0.5,850,820
