@@ -2,236 +2,241 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Employee Pulse Survey Portal</title>
+<title>MPTEPL OEE Dashboard</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body { font-family: Arial; background:"C:\Users\hrtrainer_u6\OneDrive - microplasticsindia.com\7. MPTEPL details\1. Photos\background.jpg.jpg"; }
-.container { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:8px; }
-h2,h3,h4 { text-align:center; }
-input, select { width:100%; padding:6px; margin:6px 0; }
-button { padding:8px 14px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; }
-button:hover { background:#0056b3; }
-table { width:100%; border-collapse:collapse; margin-top:15px; }
-th,td { border:1px solid #ccc; padding:8px; text-align:center; }
-.hidden { display:none; }
-.nav { text-align:center; margin-bottom:15px; }
-.nav button { margin:5px; }
+body{
+    font-family:Arial;
+    background:linear-gradient(120deg,#1e3c72,#2a5298);
+    margin:0;padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:#fff;
+    padding:25px;
+    border-radius:12px;
+}
+
+h2{text-align:center;color:#1e3c72;}
+h3{margin-top:25px;color:#1e3c72;}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:15px;
+}
+
+button,input[type=file]{
+    padding:10px;
+    border-radius:6px;
+    border:none;
+}
+
+button{
+    background:#1e3c72;
+    color:white;
+    cursor:pointer;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.card{
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:bold;
+}
+
+.avail{background:#ffeaa7;}
+.perf{background:#81ecec;}
+.qual{background:#a29bfe;}
+.oee{background:#55efc4;font-size:22px;}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#1e3c72;
+    color:white;
+}
+
+/* ADMIN MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+}
+.modal-box{
+    background:#fff;
+    padding:25px;
+    max-width:350px;
+    margin:150px auto;
+    border-radius:10px;
+}
+.modal-box input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-<h2>Employee Pulse Survey Portal</h2>
 
-<div class="nav">
-<button onclick="showEmpLogin()">Employee Access</button>
-<button onclick="showHRAdminLogin()">HR Admin Access</button>
+<h2>📊 MPTEPL OEE Dashboard</h2>
+
+<div class="top-bar">
+    <div id="adminControls" style="display:none;">
+        <input type="file" id="upload" accept=".xlsx,.xls">
+        <button onclick="exportExcel()">⬇ Export</button>
+    </div>
+    <div>
+        <button onclick="openAdmin()">Admin Login</button>
+        <button onclick="logout()" id="logoutBtn" style="display:none;">Logout</button>
+    </div>
 </div>
 
-<!-- ================= EMPLOYEE LOGIN ================= -->
-<div id="empLogin">
-<h3>Employee Login</h3>
-<input type="text" id="empNoLogin" placeholder="Employee Number" required>
-<button onclick="empLogin()">Login</button>
+<!-- OVERALL OEE -->
+<div class="cards">
+    <div class="card avail">Availability<br><span id="availability">0%</span></div>
+    <div class="card perf">Performance<br><span id="performance">0%</span></div>
+    <div class="card qual">Quality<br><span id="quality">0%</span></div>
+    <div class="card oee">Overall OEE<br><span id="oee">0%</span></div>
 </div>
 
-<!-- ================= EMPLOYEE SURVEY ================= -->
-<div id="empSurvey" class="hidden">
-<h3>Pulse Survey</h3>
-<p><b>Employee No:</b> <span id="empDisplay"></span></p>
-
-<label>Department</label>
-<input type="text" id="dept" readonly>
-
-<label>1. Work Satisfaction</label>
-<select id="q1"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-
-<label>2. Team Support</label>
-<select id="q2"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-
-<label>3. Manager Communication</label>
-<select id="q3"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-
-<label>4. Workload Balance</label>
-<select id="q4"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-
-<label>5. Overall Happiness</label>
-<select id="q5"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-
-<br><br>
-<button onclick="submitSurvey()">Submit Survey</button>
-</div>
-
-<!-- ================= HR ADMIN LOGIN ================= -->
-<div id="HRadminLogin" class="hidden">
-<h3>HR Admin Login</h3>
-<input type="text" id="adminUser" placeholder="Username">
-<input type="password" id="adminPass" placeholder="Password">
-<button onclick="HRadminLogin()">Login</button>
-</div>
-
-<!-- ================= HR ADMIN PANEL ================= -->
-<div id="HRadminPanel" class="hidden">
-<h3>HR Admin Dashboard</h3>
-
-<h4>Upload Employee Master (CSV)</h4>
-<p><b>Format:</b> EmpNo,Department</p>
-<input type="file" id="empFile" accept=".csv">
-<button onclick="uploadEmployees()">Upload</button>
-<p id="uploadStatus"></p>
-
-<button onclick="loadData()">Refresh</button>
-<button onclick="downloadExcel()">Download Excel</button>
-<button onclick="clearData()">Clear All</button>
-
-<table>
+<!-- CONVEYOR WISE -->
+<h3>Conveyor-wise OEE</h3>
+<table id="dataTable">
 <thead>
 <tr>
-<th>Emp No</th>
-<th>Dept</th>
-<th>Q1</th>
-<th>Q2</th>
-<th>Q3</th>
-<th>Q4</th>
-<th>Q5</th>
-<th>Average</th>
+    <th>Conveyor</th>
+    <th>Availability</th>
+    <th>Performance</th>
+    <th>Quality</th>
+    <th>OEE</th>
 </tr>
 </thead>
-<tbody id="dataTable"></tbody>
+<tbody></tbody>
 </table>
+
 </div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal" id="adminModal">
+    <div class="modal-box">
+        <h3>Admin Access</h3>
+        <input type="password" id="adminPass" placeholder="Enter Admin Password">
+        <button onclick="adminLogin()" style="margin-top:10px;width:100%;">Login</button>
+    </div>
 </div>
 
 <script>
-/* ========== ADMIN CREDENTIALS ========== */
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin@123";
+let excelData=[];
+let isAdmin=false;
 
-/* ========== GLOBAL DATA ========== */
-let currentEmp = "";
-let employeeMaster = JSON.parse(localStorage.getItem("employeeMaster")) || {};
-
-/* ========== NAVIGATION ========== */
-function hideAll() {
-    ["empLogin","empSurvey","HRadminLogin","HRadminPanel"].forEach(id =>
-        document.getElementById(id).classList.add("hidden")
-    );
+/* ADMIN LOGIN */
+function openAdmin(){
+    document.getElementById("adminModal").style.display="block";
 }
 
-function showEmpLogin() {
-    hideAll();
-    document.getElementById("empLogin").classList.remove("hidden");
-}
-
-function showHRAdminLogin() {
-    hideAll();
-    document.getElementById("HRadminLogin").classList.remove("hidden");
-}
-
-/* ========== HR ADMIN LOGIN ========== */
-function HRadminLogin() {
-    let user = document.getElementById("adminUser").value.trim();
-    let pass = document.getElementById("adminPass").value.trim();
-
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-        hideAll();
-        document.getElementById("HRadminPanel").classList.remove("hidden");
-        loadData();
-    } else {
-        alert("Invalid HR Admin Username or Password");
+function adminLogin(){
+    if(document.getElementById("adminPass").value==="admin123"){
+        isAdmin=true;
+        document.getElementById("adminControls").style.display="block";
+        document.getElementById("logoutBtn").style.display="inline-block";
+        document.getElementById("adminModal").style.display="none";
+    }else{
+        alert("Invalid Password");
     }
 }
 
-/* ========== UPLOAD EMPLOYEE MASTER ========== */
-function uploadEmployees() {
-    let file = document.getElementById("empFile").files[0];
-    if (!file) return alert("Select CSV file");
+function logout(){
+    location.reload();
+}
 
-    let reader = new FileReader();
-    reader.onload = e => {
-        let rows = e.target.result.split("\n");
-        employeeMaster = {};
-        rows.slice(1).forEach(r => {
-            let c = r.split(",");
-            if (c[0]) employeeMaster[c[0].trim()] = { dept:c[1]?.trim() };
-        });
-        localStorage.setItem("employeeMaster", JSON.stringify(employeeMaster));
-        uploadStatus.innerText = "Employees Uploaded: " + Object.keys(employeeMaster).length;
+/* FILE UPLOAD */
+document.getElementById("upload")?.addEventListener("change",function(e){
+    const reader=new FileReader();
+    reader.onload=function(e){
+        const wb=XLSX.read(e.target.result,{type:"binary"});
+        const sheet=wb.Sheets[wb.SheetNames[0]];
+        excelData=XLSX.utils.sheet_to_json(sheet);
+        calculateDashboard();
     };
-    reader.readAsText(file);
-}
+    reader.readAsBinaryString(e.target.files[0]);
+});
 
-/* ========== EMPLOYEE LOGIN WITHOUT DOB ========== */
-function empLogin() {
-    let empNo = empNoLogin.value.trim();
+function calculateDashboard(){
+    let map={};
 
-    if (!employeeMaster[empNo]) return alert("Employee not authorized");
-
-    let data = JSON.parse(localStorage.getItem("surveyData")) || [];
-    if (data.some(d => d.empNo === empNo)) return alert("Survey already submitted");
-
-    currentEmp = empNo;
-    empDisplay.innerText = empNo;
-    dept.value = employeeMaster[empNo].dept;
-
-    hideAll();
-    document.getElementById("empSurvey").classList.remove("hidden");
-}
-
-/* ========== SUBMIT SURVEY ========== */
-function submitSurvey() {
-    let data = JSON.parse(localStorage.getItem("surveyData")) || [];
-    data.push({
-        empNo: currentEmp,
-        dept: dept.value,
-        q1: +q1.value,
-        q2: +q2.value,
-        q3: +q3.value,
-        q4: +q4.value,
-        q5: +q5.value
+    excelData.forEach(r=>{
+        if(!map[r.Conveyor]) map[r.Conveyor]=[];
+        map[r.Conveyor].push(r);
     });
-    localStorage.setItem("surveyData", JSON.stringify(data));
-    alert("Survey Submitted Successfully");
-    hideAll();
-    showEmpLogin();
-}
 
-/* ========== LOAD DATA ========== */
-function loadData() {
-    dataTable.innerHTML="";
-    (JSON.parse(localStorage.getItem("surveyData"))||[]).forEach(r=>{
-        let avg=((r.q1+r.q2+r.q3+r.q4+r.q5)/5).toFixed(2);
-        dataTable.innerHTML+=`
-<tr><td>${r.empNo}</td><td>${r.dept}</td>
-<td>${r.q1}</td><td>${r.q2}</td><td>${r.q3}</td>
-<td>${r.q4}</td><td>${r.q5}</td><td>${avg}</td></tr>`;
-    });
-}
+    let tbody=document.querySelector("#dataTable tbody");
+    tbody.innerHTML="";
 
-/* ========== DOWNLOAD EXCEL ========== */
-function downloadExcel() {
-    let data = JSON.parse(localStorage.getItem("surveyData")) || [];
-    if (!data.length) return alert("No data available");
+    let A=0,P=0,Q=0,c=0;
 
-    let csv="Emp No,Dept,Q1,Q2,Q3,Q4,Q5,Average\n";
-    data.forEach(r=>{
-        let avg=((r.q1+r.q2+r.q3+r.q4+r.q5)/5).toFixed(2);
-        csv+=`${r.empNo},${r.dept},${r.q1},${r.q2},${r.q3},${r.q4},${r.q5},${avg}\n`;
-    });
-    let blob=new Blob([csv],{type:"text/csv"});
-    let a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="Pulse_Survey_Report.csv";
-    a.click();
-}
+    for(let conv in map){
+        let tA=0,tP=0,tQ=0;
+        map[conv].forEach(r=>{
+            let op=r.PlannedTime-r.Downtime;
+            tA+=op/r.PlannedTime;
+            tP+=(r.IdealCycleTime*r.TotalCount)/op;
+            tQ+=r.GoodCount/r.TotalCount;
+        });
 
-/* ========== CLEAR DATA ========== */
-function clearData() {
-    if(confirm("Delete all survey data?")){
-        localStorage.removeItem("surveyData");
-        loadData();
+        let n=map[conv].length;
+        let a=tA/n,p=tP/n,q=tQ/n,o=a*p*q;
+
+        tbody.innerHTML+=`
+        <tr>
+            <td>${conv}</td>
+            <td>${(a*100).toFixed(2)}%</td>
+            <td>${(p*100).toFixed(2)}%</td>
+            <td>${(q*100).toFixed(2)}%</td>
+            <td><b>${(o*100).toFixed(2)}%</b></td>
+        </tr>`;
+
+        A+=a; P+=p; Q+=q; c++;
     }
+
+    availability.innerHTML=((A/c)*100).toFixed(2)+"%";
+    performance.innerHTML=((P/c)*100).toFixed(2)+"%";
+    quality.innerHTML=((Q/c)*100).toFixed(2)+"%";
+    oee.innerHTML=(((A/c)*(P/c)*(Q/c))*100).toFixed(2)+"%";
+}
+
+function exportExcel(){
+    if(!isAdmin) return;
+    const ws=XLSX.utils.json_to_sheet(excelData);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"MPTEPL_OEE");
+    XLSX.writeFile(wb,"MPTEPL_OEE_Report.xlsx");
 }
 </script>
 
